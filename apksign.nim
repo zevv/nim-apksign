@@ -28,11 +28,11 @@ proc base64sha1(s: string): string =
   result = base64.encode(parseHexStr($s.secureHash))
 
 proc skipFile(s: string): bool =
-  if s.len > 8 and s[0..7] == "META-INF":
-    var (dir, name, ext) = s.splitFile
-    return ext in [ ".MF", ".SF", ".RSA", ".DSA", ".EC" ]
+  let (dir, name, ext) = s.splitFile
+  return dir == "META-INF" and ext in [ ".MF", ".SF", ".RSA", ".DSA", ".EC" ]
 
-proc joinCrLf(ss: openarray[string]): string = ss.join("\r\n") & "\r\n\r\n"
+proc joinCrLf(ss: openarray[string]): string =
+  ss.join("\r\n") & "\r\n\r\n"
 
 
 proc buildManifestSf(signer: var Signer, src: var ZipArchive) =
@@ -61,7 +61,7 @@ proc buildManifestSf(signer: var Signer, src: var ZipArchive) =
 
 proc buildCertSf(signer: var Signer, src: var ZipArchive) =
 
-  echo "- Building CERT.CF"
+  echo "- Building CERT.SF"
 
   signer.certSf.add joinCrLf [
     "Signature-Version: 1.0",
