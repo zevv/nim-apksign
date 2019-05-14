@@ -116,22 +116,14 @@ proc buildSignedApk(signer: var Signer, src: var ZipArchive) =
   dst.close()
 
 
+proc main() =
+  var src: ZipArchive
+  doAssert src.open(apkIn, fmRead)
 
+  var signer = Signer(entryHash: initTable[string, string]())
+  signer.buildManifestSf(src)
+  signer.buildCertSf(src)
+  signer.buildCertRsa()
+  signer.buildSignedAPK(src)
 
-var src: ZipArchive
-doAssert src.open(apkIn, fmRead)
-
-var signer = Signer(entryHash: initTable[string, string]())
-
-signer.buildManifestSf(src)
-signer.buildCertSf(src)
-signer.buildCertRsa()
-
-signer.buildSignedAPK(src)
-
-writeFile("flop", signer.certRsa)
-
-
-#let manifestHash = base64sha1(manifest)
-#let certSf = mkCertSf(src, manifestHash)
-#echo certSf
+main()
