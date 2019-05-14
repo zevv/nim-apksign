@@ -67,7 +67,6 @@ proc buildCertSf(signer: var Signer, src: var ZipArchive) =
     "Signature-Version: 1.0",
     "Created-By: 1.0 (Android)",
     "SHA1-Digest-Manifest: " & signer.manifestHash,
-    "X-Android-APK-Signed: 2",
   ]
   
   for f in src.walkFiles:
@@ -82,12 +81,20 @@ proc buildCertRsa(signer: var Signer) =
 
   echo "- Building CERT.RSA"
 
-  writeFile(tmpFile, signer.certSf)
-  let cmd = "openssl smime -sign -inkey " & signKey & " -signer " & signCert & " -binary -outform DER -noattr -in " & tmpFile
-  let (rsa, rv) = execCmdEx(cmd)
+  writeFile(tmpFile & ".in", signer.certSf)
+  let cmd = "openssl smime" &
+               " -sign -inkey " & signKey & 
+               " -signer " & signCert & 
+               " -binary -outform DER" &
+               " -noattr" &
+               " -in " & tmpFile & ".in" &
+               " -out " & tmpFile & ".out" 
+
+  let (stdout, rv) = execCmdEx(cmd)
   doAssert rv == 0
-  signer.certRsa = rsa
-  removeFile(tmpFile)
+  signer.certRsa = readFile(tmpFile & ".out")
+  removeFile(tmpFile & ".in")
+  removeFile(tmpFile & ".out")
 
 
 proc buildSignedApk(signer: var Signer, src: var ZipArchive) =
