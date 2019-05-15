@@ -5,6 +5,7 @@ import std/sha1
 import base64
 import strutils
 import tables
+import nimcrypto
 import os, osproc
 
 
@@ -25,7 +26,7 @@ type
 
 
 proc base64sha1(s: string): string =
-  result = base64.encode(parseHexStr($s.secureHash))
+  base64.encode(sha256.digest(s).data)
 
 proc skipFile(s: string): bool =
   let (dir, name, ext) = s.splitFile
@@ -50,7 +51,7 @@ proc buildManifestSf(signer: var Signer, src: var ZipArchive) =
       let s = src.getStream(f)
       let entry = joinCrLf([
         "Name: " & f,
-        "SHA1-Digest: " & s.readAll().base64sha1,
+        "SHA-256-Digest: " & s.readAll().base64sha1,
       ])
       signer.manifest.add entry
       signer.entryHash[f] = base64sha1(entry)
@@ -66,14 +67,14 @@ proc buildCertSf(signer: var Signer, src: var ZipArchive) =
   signer.certSf.add joinCrLf [
     "Signature-Version: 1.0",
     "Created-By: 1.0 (Android)",
-    "SHA1-Digest-Manifest: " & signer.manifestHash,
+    "SHA-256-Digest-Manifest: " & signer.manifestHash,
   ]
   
   for f in src.walkFiles:
     if not f.skipFile:
       signer.certSf.add joinCrLf [
         "Name: " & f,
-        "SHA1-Digest: " & signer.entryHash[f],
+        "SHA-256-Digest: " & signer.entryHash[f],
       ]
 
 
